@@ -9,6 +9,7 @@ class LoginView {
 	private static $cookiePassword = 'LoginView::CookiePassword';
 	private static $keep = 'LoginView::KeepMeLoggedIn';
 	private static $messageId = 'LoginView::Message';
+	private $loggedIn = false;
 
 	/**
 	 * Create HTTP response
@@ -30,11 +31,21 @@ class LoginView {
 				$message = 'Password is missing';
 			} else if ($userName != 'Admin' || $password != 'Password') {
 				$message = 'Wrong name or password';
+			} else {
+				$message = "Welcome";
 			}
 		}
 		
-		$response = $this->generateLoginFormHTML($message);
-		//$response .= $this->generateLogoutButtonHTML($message);
+		if($this->getLogoutAttempt()) {
+			$message = "Bye bye!";
+		}
+		
+		if($message == "Welcome") {
+			$response = $this->generateLogoutButtonHTML($message);
+			$this->loggedIn = true;
+		} else {
+			$response = $this->generateLoginFormHTML($message);
+		}
 		return $response;
 	}
 
@@ -79,7 +90,10 @@ class LoginView {
 		';
 	}
 	
-	//CREATE GET-FUNCTIONS TO FETCH REQUEST VARIABLES
+	/**
+	 * Get the user entered username
+	 * @return the entered username, or null if no username is entered
+	 */
 	private function getRequestUserName() {
 		if(isset($_POST[self::$name])) {
 			return $_POST[self::$name];
@@ -88,6 +102,10 @@ class LoginView {
 		}
 	}
 	
+	/**
+	 * Get the user entered password
+	 * @return the entered password, or null if no password is entered
+	 */
 	private function getRequestPassword() {
 		if(isset($_POST[self::$password])) {
 			return $_POST[self::$password];
@@ -96,7 +114,35 @@ class LoginView {
 		}
 	}
 	
+	/**
+	 * Check if a login attempt is made
+	 * @return true if the user tried to login, false otherwise
+	 */
 	private function getLoginAttempt() {
 		return isset($_POST[self::$login]);
+	}
+	
+	/**
+	 * Check if a logout attempt is made
+	 * @return true if the user tried to logout, false otherwise
+	 */
+	private function getLogoutAttempt() {
+		return isset($_POST[self::$logout]);
+	}
+	
+	/**
+	 * Check if the user wants to stay logged in
+	 * @return true if the user wants to stay logged in, false otherwise
+	 */
+	 private function getKeepLoggedIn() {
+	 	return isset($_POST[self::$keep]);
+	 }
+	
+	/**
+	 * Check if the user is logged in
+	 * @return true if the user is logged in, false otherwise
+	 */
+	public function isUserLoggedIn() {
+		return $this->loggedIn;
 	}
 }

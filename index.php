@@ -15,5 +15,5 @@ $dtv = new DateTimeView();
 $lv = new LayoutView();
 
 
-$lv->render(false, $v, $dtv);
+$lv->render($v->isUserLoggedIn(), $v, $dtv);
 
