@@ -10,8 +10,6 @@ class LoginView {
 	private static $keep = 'LoginView::KeepMeLoggedIn';
 	private static $messageId = 'LoginView::Message';
 
-	
-
 	/**
 	 * Create HTTP response
 	 *
@@ -23,10 +21,15 @@ class LoginView {
 		$message = '';
 		
 		if($this->getLoginAttempt()) {
-			if($this->getRequestUserName() == null) {
+			$userName = $this->getRequestUserName();
+			$password = $this->getRequestPassword();
+			
+			if($userName == null) {
 				$message = 'Username is missing';
-			} else if ($this->getRequestPassword() == null) {
+			} else if ($password == null) {
 				$message = 'Password is missing';
+			} else if ($userName != 'Admin' || $password != 'Password') {
+				$message = 'Wrong name or password';
 			}
 		}
 		
@@ -62,7 +65,7 @@ class LoginView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getRequestUserName() . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '" />
@@ -78,11 +81,19 @@ class LoginView {
 	
 	//CREATE GET-FUNCTIONS TO FETCH REQUEST VARIABLES
 	private function getRequestUserName() {
-		return $_POST[self::$name];
+		if(isset($_POST[self::$name])) {
+			return $_POST[self::$name];
+		} else {
+			return null;
+		}
 	}
 	
 	private function getRequestPassword() {
-		return $_POST[self::$password];
+		if(isset($_POST[self::$password])) {
+			return $_POST[self::$password];
+		} else {
+			return null;
+		}
 	}
 	
 	private function getLoginAttempt() {
