@@ -13,9 +13,16 @@ class LoginView {
 	private static $messageId = 'LoginView::Message';
 	private $user;
 
-	public function __construct(\model\User $user) {
+	public function __construct(\model\User $user) {		
 		$this->user = $user;
-		$this->user->login($this->getRequestUserName(), $this->getRequestPassword());
+		
+		if(!$this->getLogoutAttempt()) {
+			if(isset($_COOKIE[self::$cookieName]) && isset($_COOKIE[self::$cookiePassword])) {
+				$this->user->login($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
+			} else {
+				$this->user->login($this->getRequestUserName(), $this->getRequestPassword());
+			}
+		}
 	}
 
 	/**
@@ -30,10 +37,22 @@ class LoginView {
 		
 		if($this->getLoginAttempt()) {
 			$message = $this->user->getLoginMessage();
+			if($this->user->getLoginStatus()) {
+				if($this->getKeepLoggedIn()){
+				$time = time() + 86400;
+				} else {
+					$time = 0;
+				}
+				setcookie(self::$cookieName, $this->getRequestUserName(), $time);
+				setcookie(self::$cookiePassword, $this->getRequestPassword(), $time);
+			}
 		}
 		
 		if($this->getLogoutAttempt()) {
 			$message = "Bye bye!";
+			$this->user->logout();
+			setcookie(self::$cookieName, '', time() - 3600);
+			setcookie(self::$cookiePassword, '', time() - 3600);
 		}
 		
 		if($this->user->getLoginStatus()) {

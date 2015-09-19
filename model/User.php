@@ -25,7 +25,7 @@ class User {
 		if($userName == self::$userName && $password == self::$password) {
 			$this->isLoggedIn = true;
 		} else {
-			$this->isLoggedIN = false;
+			$this->isLoggedIn = false;
 		}
 	}
 	
@@ -51,6 +51,13 @@ class User {
 	 */
 	public function getLoginStatus() {
 		return $this->isLoggedIn;
+	}
+	
+	/**
+	 * Logsout the user
+	 */
+	public function logout() {
+		$this->isLoggedIn = false;
 	}
 }
 ?>
