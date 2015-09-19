@@ -1,7 +1,5 @@
 <?php
 
-namespace view;
-
 class LoginView {
 	private static $login = 'LoginView::Login';
 	private static $logout = 'LoginView::Logout';
@@ -11,12 +9,7 @@ class LoginView {
 	private static $cookiePassword = 'LoginView::CookiePassword';
 	private static $keep = 'LoginView::KeepMeLoggedIn';
 	private static $messageId = 'LoginView::Message';
-	private $user;
-
-	public function __construct(\model\User $user) {
-		$this->user = $user;
-		$this->user->login($this->getRequestUserName(), $this->getRequestPassword());
-	}
+	private $loggedIn = false;
 
 	/**
 	 * Create HTTP response
@@ -29,15 +22,27 @@ class LoginView {
 		$message = '';
 		
 		if($this->getLoginAttempt()) {
-			$message = $this->user->getLoginMessage();
+			$userName = $this->getRequestUserName();
+			$password = $this->getRequestPassword();
+			
+			if($userName == null) {
+				$message = 'Username is missing';
+			} else if ($password == null) {
+				$message = 'Password is missing';
+			} else if ($userName != 'Admin' || $password != 'Password') {
+				$message = 'Wrong name or password';
+			} else {
+				$message = "Welcome";
+			}
 		}
 		
 		if($this->getLogoutAttempt()) {
 			$message = "Bye bye!";
 		}
 		
-		if($this->user->getLoginStatus()) {
+		if($message == "Welcome") {
 			$response = $this->generateLogoutButtonHTML($message);
+			$this->loggedIn = true;
 		} else {
 			$response = $this->generateLoginFormHTML($message);
 		}
@@ -138,6 +143,6 @@ class LoginView {
 	 * @return true if the user is logged in, false otherwise
 	 */
 	public function isUserLoggedIn() {
-		return $this->user->getLoginStatus();
+		return $this->loggedIn;
 	}
 }
