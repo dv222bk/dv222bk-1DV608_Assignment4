@@ -9,10 +9,6 @@ class User {
 	private $loginPassword;
 	private $isLoggedIn = false;
 	
-	public function __construct() {	
-	
-	}
-	
 	/**
 	 * Takes login information, saves it, and checks if it is correct
 	 * @param $userName, String username
@@ -22,26 +18,10 @@ class User {
 		$this->loginUserName = $userName;
 		$this->loginPassword = $password;
 		
-		if($userName == self::$userName && $password == self::$password) {
+		if($userName == self::$userName && hash_equals($this->encryptPassword(self::$password), $password)) {
 			$this->isLoggedIn = true;
 		} else {
 			$this->isLoggedIn = false;
-		}
-	}
-	
-	/**
-	 * Checks if the saved login information is correct
-	 * @return status message
-	 */
-	public function getLoginMessage() {
-		if(trim($this->loginUserName) == null) {
-			return 'Username is missing';
-		} else if (trim($this->loginPassword) == null) {
-			return 'Password is missing';
-		} else if ($this->loginUserName != self::$userName || $this->loginPassword != self::$password) {
-			return 'Wrong name or password';
-		} else {
-			return "Welcome";
 		}
 	}
 	
@@ -58,6 +38,12 @@ class User {
 	 */
 	public function logout() {
 		$this->isLoggedIn = false;
+		$this->loginUserName = null;
+		$this->loginPassword = null;
+	}
+	
+	public function encryptPassword($password) {
+		return crypt($password, '$2a$07$thissaltisactuallysavedandcanbeviewdinthehashstring$');
 	}
 }
 ?>

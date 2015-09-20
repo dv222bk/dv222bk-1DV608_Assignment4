@@ -15,14 +15,6 @@ class LoginView {
 
 	public function __construct(\model\User $user) {		
 		$this->user = $user;
-		
-		if(!$this->getLogoutAttempt()) {
-			if(isset($_COOKIE[self::$cookieName]) && isset($_COOKIE[self::$cookiePassword])) {
-				$this->user->login($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
-			} else {
-				$this->user->login($this->getRequestUserName(), $this->getRequestPassword());
-			}
-		}
 	}
 
 	/**
@@ -36,10 +28,20 @@ class LoginView {
 		$message = '';
 		
 		if($this->getLoginAttempt()) {
-			$message = $this->user->getLoginMessage();
+			if(trim($this->getRequestUserName()) == '') {
+				$message = 'Username is missing';
+			} else if (trim($this->getRequestPassword()) == '') {
+				$message = 'Password is missing';
+			} else if (!$this->user->getLoginStatus()) {
+				$message = 'Wrong name or password';
+			} else {
+				$message = 'Welcome';
+			}
+			
 			if($this->user->getLoginStatus()) {
 				if($this->getKeepLoggedIn()){
-				$time = time() + 86400;
+					$time = time() + 86400;
+					$message .= ' and you will be remembered';
 				} else {
 					$time = 0;
 				}
@@ -50,7 +52,6 @@ class LoginView {
 		
 		if($this->getLogoutAttempt()) {
 			$message = "Bye bye!";
-			$this->user->logout();
 			setcookie(self::$cookieName, '', time() - 3600);
 			setcookie(self::$cookiePassword, '', time() - 3600);
 		}
@@ -108,11 +109,13 @@ class LoginView {
 	 * Get the user entered username
 	 * @return the entered username, or null if no username is entered
 	 */
-	private function getRequestUserName() {
-		if(isset($_POST[self::$name])) {
+	public function getRequestUserName() {
+		if(isset($_COOKIE[self::$cookieName])) {
+			return $_COOKIE[self::$cookieName];
+		} else if(isset($_POST[self::$name])) {
 			return $_POST[self::$name];
 		} else {
-			return null;
+			return '';
 		}
 	}
 	
@@ -120,11 +123,13 @@ class LoginView {
 	 * Get the user entered password
 	 * @return the entered password, or null if no password is entered
 	 */
-	private function getRequestPassword() {
-		if(isset($_POST[self::$password])) {
-			return $_POST[self::$password];
+	public function getRequestPassword() {
+		if(isset($_COOKIE[self::$cookiePassword])) {
+			return $_COOKIE[self::$cookiePassword];
+		} else if(isset($_POST[self::$password]) && $_POST[self::$password] != '') {
+			return $this->user->encryptPassword($_POST[self::$password]);
 		} else {
-			return null;
+			return '';
 		}
 	}
 	
@@ -132,7 +137,7 @@ class LoginView {
 	 * Check if a login attempt is made
 	 * @return true if the user tried to login, false otherwise
 	 */
-	private function getLoginAttempt() {
+	public function getLoginAttempt() {
 		return isset($_POST[self::$login]);
 	}
 	
@@ -140,7 +145,7 @@ class LoginView {
 	 * Check if a logout attempt is made
 	 * @return true if the user tried to logout, false otherwise
 	 */
-	private function getLogoutAttempt() {
+	public function getLogoutAttempt() {
 		return isset($_POST[self::$logout]);
 	}
 	
@@ -148,7 +153,7 @@ class LoginView {
 	 * Check if the user wants to stay logged in
 	 * @return true if the user wants to stay logged in, false otherwise
 	 */
-	 private function getKeepLoggedIn() {
+	 public function getKeepLoggedIn() {
 	 	return isset($_POST[self::$keep]);
 	 }
 	
