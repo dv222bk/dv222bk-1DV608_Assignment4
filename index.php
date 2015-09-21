@@ -1,5 +1,4 @@
 <?php
-
 //INCLUDE THE FILES NEEDED...
 require_once('model/User.php');
 

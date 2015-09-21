@@ -43,7 +43,7 @@ class User {
 	}
 	
 	public function encryptPassword($password) {
-		return crypt($password, '$2a$07$thissaltisactuallysavedandcanbeviewdinthehashstring$');
+		return crypt($password, '$2a$07$derp$');
 	}
 }
 ?>

@@ -1,5 +1,4 @@
 <?php
-
 namespace view;
 
 class LoginView {
@@ -11,9 +10,12 @@ class LoginView {
 	private static $cookiePassword = 'LoginView::CookiePassword';
 	private static $keep = 'LoginView::KeepMeLoggedIn';
 	private static $messageId = 'LoginView::Message';
+	private static $sessionName = 'LoginView::SessionName';
+	private static $sessionPassword = 'LoginView::SessionPassword';
 	private $user;
 
-	public function __construct(\model\User $user) {		
+	public function __construct(\model\User $user) {
+		session_start();		
 		$this->user = $user;
 	}
 
@@ -40,20 +42,26 @@ class LoginView {
 			
 			if($this->user->getLoginStatus()) {
 				if($this->getKeepLoggedIn()){
-					$time = time() + 86400;
 					$message .= ' and you will be remembered';
-				} else {
-					$time = 0;
+					$this->setCookies($this->getRequestUserName(), $this->getRequestPassword(), time() + 86400);
 				}
-				setcookie(self::$cookieName, $this->getRequestUserName(), $time);
-				setcookie(self::$cookiePassword, $this->getRequestPassword(), $time);
+				$this->setSessions($this->getRequestUserName(), $this->getRequestPassword());
 			}
 		}
 		
 		if($this->getLogoutAttempt()) {
 			$message = "Bye bye!";
-			setcookie(self::$cookieName, '', time() - 3600);
-			setcookie(self::$cookiePassword, '', time() - 3600);
+			$this->clearCookies();
+			$this->clearSessions();
+		}
+		
+		if($this->cookiesExists() && !$this->user->getLoginStatus()) {
+			$message = "Wrong information in cookies";
+			$this->clearCookies();
+			$this->clearSessions();
+		} else if ($this->cookiesExists() && !$this->sessionsExists()) {
+			$message = "Welcome back with cookie";
+			$this->setSessions($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
 		}
 		
 		if($this->user->getLoginStatus()) {
@@ -163,5 +171,108 @@ class LoginView {
 	 */
 	public function isUserLoggedIn() {
 		return $this->user->getLoginStatus();
+	}
+	
+	/**
+	 * Check if the user is logged in this session and get the username
+	 * @return the username if the user is logged in, empty string otherwise
+	 */
+	public function getSessionName() {
+		if(isset($_SESSION[self::$sessionName])) {
+			return $_SESSION[self::$sessionName];
+		}
+		return '';
+	}
+	
+	/**
+	 * Check if the user is logged in this session and get the hashed password
+	 * @return the hashed password if the user is logged in, empty string otherwise
+	 */
+	public function getSessionPassword() {
+		if(isset($_SESSION[self::$sessionPassword])) {
+			return $_SESSION[self::$sessionPassword];
+		}
+		return '';
+	}
+	
+	/**
+	 * Check if the user is logged in with cookies and get the username
+	 * @return the username if the user is logged in, empty string otherwise
+	 */
+	public function getCookieName() {
+		if(isset($_COOKIE[self::$cookieName])) {
+			return $_COOKIE[self::$cookieName];
+		}
+		return '';
+	}
+	
+	/**
+	 * Check if the user is logged in with cookies and get the hashed password
+	 * @return the hashed password if the user is logged in, empty string otherwise
+	 */
+	public function getCookiePassword() {
+		if(isset($_COOKIE[self::$cookiePassword])) {
+			return $_COOKIE[self::$cookiePassword];
+		}
+		return '';
+	}
+	
+	/**
+	 * Checks if the user is logged in using session
+	 * @return true if the user is logged in with sessions, false otherwise
+	 */
+	public function sessionsExists() {
+		if(isset($_SESSION[self::$sessionName]) && isset($_SESSION[self::$sessionPassword])) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Checks if the user is logged in using cookies
+	 * @return true if the user is logged in with cookies, false otherwise
+	 */
+	public function cookiesExists() {
+		if(isset($_COOKIE[self::$cookieName]) && isset($_COOKIE[self::$cookiePassword])) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Sets the sessions used for keeping the user logged in
+	 * @param $userName, String username
+	 * @param $password, String hashed password
+	 */
+	public function setSessions($userName, $password) {
+		$_SESSION[self::$sessionName] = $userName;
+		$_SESSION[self::$sessionPassword] = $password;
+	}
+	
+	/**
+	 * Sets the cookies used for keeping the user logged in
+	 * @param $userName, String username
+	 * @param $password, String hashed password
+	 * @param $time, int seconds since unix epoch, how long the cookie should exist
+	 */
+	public function setCookies($userName, $password, $time) {
+		setcookie(self::$cookieName, $userName, $time);
+		setcookie(self::$cookiePassword, $password, $time);
+	}
+	
+	/**
+	 * Clears the cookies used for keeping the user logged in
+	 */
+	public function clearCookies() {
+		unset($_COOKIE[self::$cookieName]);
+		unset($_COOKIE[self::$cookiePassword]);
+	}
+	
+	/**
+	 * Clears the sessions used for keeping the user logged in
+	 */
+	public function clearSessions() {
+		unset($_SESSION[self::$sessionName]);
+		unset($_SESSION[self::$sessionPassword]);
 	}
 }
