@@ -18,7 +18,7 @@ class User {
 		$this->loginUserName = $userName;
 		$this->loginPassword = $password;
 		
-		if($userName == self::$userName && hash_equals($this->encryptPassword(self::$password), $password)) {
+		if($userName == self::$userName && password_verify(self::$password, $password)) {
 			$this->isLoggedIn = true;
 		} else {
 			$this->isLoggedIn = false;
@@ -43,7 +43,7 @@ class User {
 	}
 	
 	public function encryptPassword($password) {
-		return crypt($password, '$2a$07$derp$');
+		return password_hash($password, PASSWORD_DEFAULT);
 	}
 }
 ?>

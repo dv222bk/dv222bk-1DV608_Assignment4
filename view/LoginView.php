@@ -49,7 +49,7 @@ class LoginView {
 			}
 		}
 		
-		if($this->getLogoutAttempt()) {
+		if($this->getLogoutAttempt() && $this->sessionsExists()) {
 			$message = "Bye bye!";
 			$this->clearCookies();
 			$this->clearSessions();
@@ -264,6 +264,10 @@ class LoginView {
 	 * Clears the cookies used for keeping the user logged in
 	 */
 	public function clearCookies() {
+		// Make sure the cookie is deleted by first overwriting the value and time it to an earlier date...
+		setcookie(self::$cookieName, '', time() - 4600);
+		setcookie(self::$cookiePassword, '', time() - 4600);
+		// And then unset it.
 		unset($_COOKIE[self::$cookieName]);
 		unset($_COOKIE[self::$cookiePassword]);
 	}
