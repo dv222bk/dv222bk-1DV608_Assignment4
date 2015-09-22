@@ -12,9 +12,16 @@
 			$this->model = $model;
 		}
 		
+		/**
+		 * Login the user
+		 */
 		public function loginUser() {
 			if($this->view->sessionsExists()) {
-				$this->model->login($this->view->getSessionName(), $this->view->getSessionPassword());
+				if($this->view->checkSessionUserAgent()) {
+					$this->model->login($this->view->getSessionName(), $this->view->getSessionPassword());
+				} else {
+					$this->model->login('', '');
+				}
 			} else if ($this->view->cookiesExists()) {
 				$this->model->login($this->view->getCookieName(), $this->view->getCookiePassword());
 			} else {
@@ -22,6 +29,9 @@
 			}
 		}
 		
+		/**
+		 * Logout the user
+		 */
 		public function logoutUser() {
 			$this->model->logout();
 		}

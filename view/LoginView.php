@@ -12,10 +12,12 @@ class LoginView {
 	private static $messageId = 'LoginView::Message';
 	private static $sessionName = 'LoginView::SessionName';
 	private static $sessionPassword = 'LoginView::SessionPassword';
+	private static $sessionUserAgent = 'LoginView::SessionUserAgent';
 	private $user;
 
 	public function __construct(\model\User $user) {
-		session_start();		
+		session_start();
+		session_regenerate_id();
 		$this->user = $user;
 	}
 
@@ -29,7 +31,9 @@ class LoginView {
 	public function response() {
 		$message = '';
 		
-		if($this->getLoginAttempt()) {
+		// if the user tries to log in (and isn't already logged in)
+		if($this->getLoginAttempt() && !$this->sessionsExists() && !$this->cookiesExists()) {
+			// create a status message
 			if(trim($this->getRequestUserName()) == '') {
 				$message = 'Username is missing';
 			} else if (trim($this->getRequestPassword()) == '') {
@@ -40,30 +44,38 @@ class LoginView {
 				$message = 'Welcome';
 			}
 			
+			// if the user sucessfully logged in
 			if($this->user->getLoginStatus()) {
+				
+				// if the user wants to be logged in for a long time, create a cookie
 				if($this->getKeepLoggedIn()){
 					$message .= ' and you will be remembered';
 					$this->setCookies($this->getRequestUserName(), $this->getRequestPassword(), time() + 86400);
 				}
+				// set session
 				$this->setSessions($this->getRequestUserName(), $this->getRequestPassword());
 			}
 		}
 		
+		// if the user tries to logout (and isn't already logged out)
 		if($this->getLogoutAttempt() && $this->sessionsExists()) {
 			$message = "Bye bye!";
 			$this->clearCookies();
 			$this->clearSessions();
 		}
 		
+		// if a cookie exists, but the user isn't logged in, the cookie contains wrong information.
 		if($this->cookiesExists() && !$this->user->getLoginStatus()) {
 			$message = "Wrong information in cookies";
 			$this->clearCookies();
 			$this->clearSessions();
+		// else, if a cookie exists but a session does not, the user logged in with a cookie
 		} else if ($this->cookiesExists() && !$this->sessionsExists()) {
 			$message = "Welcome back with cookie";
 			$this->setSessions($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
 		}
 		
+		// create response depending on the users login status
 		if($this->user->getLoginStatus()) {
 			$response = $this->generateLogoutButtonHTML($message);
 		} else {
@@ -222,7 +234,19 @@ class LoginView {
 	 * @return true if the user is logged in with sessions, false otherwise
 	 */
 	public function sessionsExists() {
-		if(isset($_SESSION[self::$sessionName]) && isset($_SESSION[self::$sessionPassword])) {
+		if(isset($_SESSION[self::$sessionName]) && isset($_SESSION[self::$sessionPassword]) && isset($_SESSION[self::$sessionUserAgent])) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Checks if the user is using the same user agent this request as the last one.
+	 * Prevents session hijacks
+	 * @return true if the user is using the same user agent, false otherwise
+	 */
+	public function checkSessionUserAgent() {
+		if(isset($_SESSION[self::$sessionUserAgent]) && $_SESSION[self::$sessionUserAgent] == $_SERVER["HTTP_USER_AGENT"]){
 			return true;
 		}
 		return false;
@@ -247,6 +271,7 @@ class LoginView {
 	public function setSessions($userName, $password) {
 		$_SESSION[self::$sessionName] = $userName;
 		$_SESSION[self::$sessionPassword] = $password;
+		$_SESSION[self::$sessionUserAgent] = $_SERVER["HTTP_USER_AGENT"];
 	}
 	
 	/**
@@ -278,5 +303,6 @@ class LoginView {
 	public function clearSessions() {
 		unset($_SESSION[self::$sessionName]);
 		unset($_SESSION[self::$sessionPassword]);
+		unset($_SESSION[self::$sessionUserAgent]);
 	}
 }

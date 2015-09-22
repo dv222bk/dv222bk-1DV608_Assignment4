@@ -42,6 +42,11 @@ class User {
 		$this->loginPassword = null;
 	}
 	
+	/**
+	 * Creates a hashed password from a string
+	 * @param password, String to be hashed
+	 * @return the hashed password
+	 */
 	public function encryptPassword($password) {
 		return password_hash($password, PASSWORD_DEFAULT);
 	}
