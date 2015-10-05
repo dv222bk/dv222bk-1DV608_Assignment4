@@ -21,8 +21,11 @@ class RegisterView {
 			if (strlen(trim($this->getRequestUserName())) < 3) {
 				$message .= 'Username has too few characters, at least 3 characters.<br/>';
 			}
+			
 			if (strlen(trim($this->getRequestPassword())) < 6) {
 				$message .= 'Password has too few characters, at least 6 characters.<br/>';
+			} else if ($this->getRequestPassword() != $this->getRequestPasswordRepeat()) {
+				$message .= 'Passwords do not match.';
 			}
 		}
 		
