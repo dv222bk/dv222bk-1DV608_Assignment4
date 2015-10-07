@@ -78,7 +78,8 @@ class LoginView {
 		
 		// if a user just got registrated, show a special message
 		if(isset($_SESSION['registrated'])) {
-			$message = "Registrated new user.";
+			$message = "Registered new user.";
+			$this->setRequestUserName($_SESSION['registrated']);
 			unset($_SESSION['registrated']);
 		}
 		
@@ -144,6 +145,10 @@ class LoginView {
 		} else {
 			return '';
 		}
+	}
+	
+	public function setRequestUserName($userName) {
+		$_POST[self::$name] = $userName;
 	}
 	
 	/**

@@ -64,8 +64,8 @@ class RegisterView {
 	}
 
 	public function registrationSuccess() {
-		$_SESSION['registrated'] = true;
-		header('LOCATION: ' . $_SERVER['PHP_SELF']);
+		$_SESSION['registrated'] = trim($_POST[self::$name]);
+		unset($_GET['register']);
 	}
 
 	public function getRequestUserName() {
