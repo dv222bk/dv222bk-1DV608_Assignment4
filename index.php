@@ -1,7 +1,7 @@
 <?php
 //INCLUDE THE FILES NEEDED...
 require_once('model/User.php');
-require_once('model/NewUser.php');
+require_once('model/UserDAL.php');
 
 require_once('controller/LoginController.php');
 require_once('controller/RegisterController.php');
@@ -12,14 +12,14 @@ require_once('view/DateTimeView.php');
 require_once('view/LayoutView.php');
 
 //CREATE OBJECTS OF THE VIEWS
-$user = new \model\User();
-$newUser = new \model\NewUser();
+$userDAL = new \model\UserDAL();
+$user = new \model\User($userDAL);
 $v = new \view\LoginView($user);
 $dtv = new \view\DateTimeView();
 $lv = new \view\LayoutView();
-$rv = new \view\RegisterView($newUser);
+$rv = new \view\RegisterView($user);
 $con = new \controller\LoginController($v, $user);
-$rcon = new \controller\RegisterController($rv, $newUser);
+$rcon = new \controller\RegisterController($rv, $userDAL);
 
 if(!$v->getLogoutAttempt()) {
 	$con->loginUser();
@@ -27,5 +27,13 @@ if(!$v->getLogoutAttempt()) {
 	$con->logoutUser();
 }
 
-$lv->render($v->isUserLoggedIn(), $v, $dtv, $rv);
+if($rv->getRegisterAttempt()) {
+	$rcon->registerUser();
+}
+
+if(isset($_GET['register'])) {
+	$lv->render($v->isUserLoggedIn(), $rv, $dtv);
+} else {
+	$lv->render($v->isUserLoggedIn(), $v, $dtv);
+}
 

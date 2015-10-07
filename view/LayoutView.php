@@ -4,7 +4,7 @@ namespace view;
 
 class LayoutView {
   
-	public function render($isLoggedIn, LoginView $v, DateTimeView $dtv, RegisterView $rv) {
+	public function render($isLoggedIn, $v, DateTimeView $dtv) {
 		echo '<!DOCTYPE html>
 		  <html>
 		    <head>
@@ -17,7 +17,7 @@ class LayoutView {
 		      ' . $this->renderIsLoggedIn($isLoggedIn) . '
 		      
 		      <div class="container">
-		          ' . $this->getContent($v, $rv) . '
+		          ' . $this->getContent($v) . '
 		          
 		          ' . $dtv->show() . '
 		      </div>
@@ -42,10 +42,8 @@ class LayoutView {
 		}
 	}
 	
-	private function getContent(LoginView $v, RegisterView $rv) {
-		if(isset($_GET['register'])) {
-			return $rv->response();
-		} else {
+	private function getContent($v) {
+		if(get_class($v) == 'view\LoginView' || get_class($v) == 'view\RegisterView') {
 			return $v->response();
 		}
 	}

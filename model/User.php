@@ -3,11 +3,14 @@
 namespace model;
 
 class User {
-	private static $userName = "Admin";
-	private static $password = "Password";
 	private $loginUserName;
 	private $loginPassword;
 	private $isLoggedIn = false;
+	private $userDAL;
+	
+	public function __construct(UserDAL $userDAL) {
+		$this->userDAL = $userDAL;
+	}
 	
 	/**
 	 * Takes login information, saves it, and checks if it is correct
@@ -18,7 +21,7 @@ class User {
 		$this->loginUserName = $userName;
 		$this->loginPassword = $password;
 		
-		if($userName == self::$userName && password_verify(self::$password, $password)) {
+		if($this->userDAL->userNameExists($userName) && password_verify($this->userDAL->getPassword($userName), $password)) {
 			$this->isLoggedIn = true;
 		} else {
 			$this->isLoggedIn = false;

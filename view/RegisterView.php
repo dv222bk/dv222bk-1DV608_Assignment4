@@ -8,10 +8,11 @@ class RegisterView {
 	private static $password = 'RegisterView::Password';
 	private static $passwordRepeat = 'RegisterView::PasswordRepeat';
 	private static $messageId = 'RegisterView::Message';
-	private $newUser;
+	private $user;
+	private $customMessage;
 	
-	public function __construct(\model\NewUser $newUser) {
-		$this->newUser = $newUser;
+	public function __construct(\model\User $user) {
+		$this->user = $user;
 	}
 	
 	public function response() {
@@ -19,19 +20,25 @@ class RegisterView {
 		
 		if($this->getRegisterAttempt()) {
 			if (strlen(trim($this->getRequestUserName())) < 3) {
-				$message .= 'Username has too few characters, at least 3 characters.<br/>';
+				$message .= 'Username has too few characters, at least 3 characters.<br />';
 			}
 			
 			if (strlen(trim($this->getRequestPassword())) < 6) {
-				$message .= 'Password has too few characters, at least 6 characters.<br/>';
-			} else if ($this->getRequestPassword() != $this->getRequestPasswordRepeat()) {
-				$message .= 'Passwords do not match.';
+				$message .= 'Password has too few characters, at least 6 characters.<br />';
 			}
+		}
+		
+		if(isset($this->customMessage)) {
+			$message = $this->customMessage;
 		}
 		
 		$response = $this->generateRegisterFormHTML($message);
 		
 		return $response;
+	}
+	
+	public function setCustomMessage($message) {
+		$this->customMessage = $message;
 	}
 	
 	private function generateRegisterFormHTML($message) {
@@ -56,12 +63,21 @@ class RegisterView {
 		';
 	}
 
+	public function registrationSuccess() {
+		$_SESSION['registrated'] = true;
+		header('LOCATION: ' . $_SERVER['PHP_SELF']);
+	}
+
 	public function getRequestUserName() {
 		if(isset($_POST[self::$name])) {
 			return $_POST[self::$name];
 		} else {
 			return '';
 		}
+	}
+	
+	public function setRequestUserName($userName) {
+		$_POST[self::$name] = $userName;
 	}
 	
 	public function getRequestPassword() {

@@ -76,6 +76,12 @@ class LoginView {
 			$this->setSessions($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
 		}
 		
+		// if a user just got registrated, show a special message
+		if(isset($_SESSION['registrated'])) {
+			$message = "Registrated new user.";
+			unset($_SESSION['registrated']);
+		}
+		
 		// create response depending on the users login status
 		if($this->user->getLoginStatus()) {
 			$response = $this->generateLogoutButtonHTML($message);
