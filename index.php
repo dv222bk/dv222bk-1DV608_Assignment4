@@ -17,7 +17,7 @@ $user = new \model\User($userDAL);
 $v = new \view\LoginView($user);
 $dtv = new \view\DateTimeView();
 $lv = new \view\LayoutView();
-$rv = new \view\RegisterView($user);
+$rv = new \view\RegisterView();
 $con = new \controller\LoginController($v, $user);
 $rcon = new \controller\RegisterController($rv, $userDAL);
 
@@ -32,8 +32,8 @@ if($rv->getRegisterAttempt()) {
 }
 
 if(isset($_GET['register'])) {
-	$lv->render($v->isUserLoggedIn(), $rv, $dtv);
+	$lv->render($con->isUserLoggedIn(), $rv, $dtv);
 } else {
-	$lv->render($v->isUserLoggedIn(), $v, $dtv);
+	$lv->render($con->isUserLoggedIn(), $v, $dtv);
 }
 

@@ -8,45 +8,38 @@ class RegisterView {
 	private static $password = 'RegisterView::Password';
 	private static $passwordRepeat = 'RegisterView::PasswordRepeat';
 	private static $messageId = 'RegisterView::Message';
-	private $user;
-	private $customMessage;
-	
-	public function __construct(\model\User $user) {
-		$this->user = $user;
-	}
-	
+	private $message;
+
 	public function response() {
-		$message = '';
-		
 		if($this->getRegisterAttempt()) {
-			if (strlen(trim($this->getRequestUserName())) < 3) {
-				$message .= 'Username has too few characters, at least 3 characters.<br />';
+			if($this->message == '') {
+				if (strlen(trim($this->getRequestUserName())) < 3) {
+					$this->message .= 'Username has too few characters, at least 3 characters.<br />';
+				}
+				
+				if (strlen(trim($this->getRequestPassword())) < 6) {
+					$this->message .= 'Password has too few characters, at least 6 characters.<br />';
+				}
 			}
-			
-			if (strlen(trim($this->getRequestPassword())) < 6) {
-				$message .= 'Password has too few characters, at least 6 characters.<br />';
-			}
+		} else {
+			$this->message = '';
 		}
 		
-		if(isset($this->customMessage)) {
-			$message = $this->customMessage;
-		}
-		
-		$response = $this->generateRegisterFormHTML($message);
+		$response = $this->generateRegisterFormHTML();
 		
 		return $response;
 	}
 	
-	public function setCustomMessage($message) {
-		$this->customMessage = $message;
+	public function saveError($errorMessage) {
+		$this->message = $errorMessage;
 	}
 	
-	private function generateRegisterFormHTML($message) {
+	private function generateRegisterFormHTML() {
 		return '
 			<form method="post" > 
 				<fieldset>
 					<legend>Register a new user - Write username and password </legend>
-					<p id="' . self::$messageId . '">' . $message . '</p>
+					<p id="' . self::$messageId . '">' . $this->message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
 					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getRequestUserName() . '" />

@@ -17,24 +17,29 @@ class RegisterController {
 		$password = trim($this->view->getRequestPassword());
 		$passwordRepeat = trim($this->view->getRequestPasswordRepeat());
 		
-		if(strlen($userName) > 2) {
-			if(strlen($password) > 5) {
-				if(!$this->model->userNameExists($userName)) {
-					if($userName == strip_tags($userName)) {
-						if($password == $passwordRepeat) {
-							$this->model->addUser($userName, $password);
-							$this->view->registrationSuccess();
+		try {
+			if(strlen($userName) > 2) {
+				if(strlen($password) > 5) {
+					if(!$this->model->userNameExists($userName)) {
+						if($userName == strip_tags($userName)) {
+							if($password == $passwordRepeat) {
+								$this->model->addUser($userName, $password);
+								$this->view->registrationSuccess();
+							} else {
+								throw new \Exception('Passwords do not match.');
+							}
 						} else {
-							$this->view->setCustomMessage("Passwords do not match.");
+							$this->view->setRequestUserName(strip_tags($userName));
+							throw new \Exception('Username contains invalid characters.');
 						}
 					} else {
-						$this->view->setCustomMessage("Username contains invalid characters.");
-						$this->view->setRequestUserName(strip_tags($userName));
+						throw new \Exception('User exists, pick another username.');
 					}
-				} else {
-					$this->view->setCustomMessage("User exists, pick another username.");
 				}
 			}
+		}
+		catch (\Exception $e) {
+			$this->view->saveError($e->getMessage());
 		}
 	}
 }

@@ -40,8 +40,6 @@ class UserDAL {
 		fwrite($file, $password.PHP_EOL);
 		
 		fclose($file);
-		
-		return true;
 	}
 	
 	public function getPassword($userName) {

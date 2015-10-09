@@ -14,6 +14,7 @@ class LoginView {
 	private static $sessionName = 'LoginView::SessionName';
 	private static $sessionPassword = 'LoginView::SessionPassword';
 	private static $sessionUserAgent = 'LoginView::SessionUserAgent';
+	private $message = '';
 	private $user;
 
 	public function __construct(\model\User $user) {
@@ -30,77 +31,78 @@ class LoginView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = '';
-		
 		// if the user tries to log in (and isn't already logged in)
 		if($this->getLoginAttempt() && !$this->sessionsExists() && !$this->cookiesExists()) {
-			// create a status message
-			if(trim($this->getRequestUserName()) == '') {
-				$message = 'Username is missing';
-			} else if (trim($this->getRequestPassword()) == '') {
-				$message = 'Password is missing';
-			} else if (!$this->user->getLoginStatus()) {
-				$message = 'Wrong name or password';
-			} else {
-				$message = 'Welcome';
-			}
-			
-			// if the user sucessfully logged in
-			if($this->user->getLoginStatus()) {
+			if($this->message == '') { // if no error message was generated
+				$this->message = 'Welcome';
 				
 				// if the user wants to be logged in for a long time, create a cookie
 				if($this->getKeepLoggedIn()){
-					$message .= ' and you will be remembered';
-					$this->setCookies($this->getRequestUserName(), $this->getRequestPassword(), time() + 86400);
+					$this->message .= ' and you will be remembered';
+					$this->setCookies($this->getRequestUserName(), $this->user->encryptPassword($this->getRequestPassword()), time() + 86400);
 				}
-				// set session
-				$this->setSessions($this->getRequestUserName(), $this->getRequestPassword());
 			}
+		} else { // if the user did not try to login, do not show a error message
+			$this->message = '';
+		}
+		
+		// if the user is logged in, create sessions to keep the user logged in
+		if($this->user->getLoginStatus() && $this->sessionsExists()){
+			$this->setSessions($_SESSION[self::$sessionName], $_SESSION[self::$sessionPassword]);
+		} else if($this->user->getLoginStatus() && !$this->cookiesExists()) {
+			$this->setSessions($this->getRequestUserName(), $this->user->encryptPassword($this->getRequestPassword()));
 		}
 		
 		// if the user tries to logout (and isn't already logged out)
 		if($this->getLogoutAttempt() && $this->sessionsExists()) {
-			$message = "Bye bye!";
+			$this->message = 'Bye bye!';
 			$this->clearCookies();
 			$this->clearSessions();
 		}
 		
 		// if a cookie exists, but the user isn't logged in, the cookie contains wrong information.
 		if($this->cookiesExists() && !$this->user->getLoginStatus()) {
-			$message = "Wrong information in cookies";
+			$this->message = 'Wrong information in cookies';
 			$this->clearCookies();
 			$this->clearSessions();
 		// else, if a cookie exists but a session does not, the user logged in with a cookie
 		} else if ($this->cookiesExists() && !$this->sessionsExists()) {
-			$message = "Welcome back with cookie";
+			$this->message = 'Welcome back with cookie';
 			$this->setSessions($_COOKIE[self::$cookieName], $_COOKIE[self::$cookiePassword]);
 		}
 		
 		// if a user just got registrated, show a special message
 		if(isset($_SESSION['registrated'])) {
-			$message = "Registered new user.";
+			$this->message = 'Registered new user.';
 			$this->setRequestUserName($_SESSION['registrated']);
 			unset($_SESSION['registrated']);
 		}
 		
 		// create response depending on the users login status
 		if($this->user->getLoginStatus()) {
-			$response = $this->generateLogoutButtonHTML($message);
+			$response = $this->generateLogoutButtonHTML();
 		} else {
-			$response = $this->generateLoginFormHTML($message);
+			$response = $this->generateLoginFormHTML();
 		}
 		return $response;
 	}
 
 	/**
+	 * Save a error message to be shown to the user
+	 * @param $errorMessage, String error message
+	 */
+	public function saveError($errorMessage) {
+		$this->message = $errorMessage;
+	}
+
+	/**
 	* Generate HTML code on the output buffer for the logout button
-	* @param $message, String output message
 	* @return  void, BUT writes to standard output!
 	*/
-	private function generateLogoutButtonHTML($message) {
+	private function generateLogoutButtonHTML() {
 		return '
 			<form  method="post" >
-				<p id="' . self::$messageId . '">' . $message .'</p>
+				<p id="' . self::$messageId . '">' . $this->message .'</p>
 				<input type="submit" name="' . self::$logout . '" value="logout"/>
 			</form>
 		';
@@ -111,12 +113,12 @@ class LoginView {
 	* @param $message, String output message
 	* @return  void, BUT writes to standard output!
 	*/
-	private function generateLoginFormHTML($message) {
+	private function generateLoginFormHTML() {
 		return '
 			<form method="post" > 
 				<fieldset>
 					<legend>Login - enter Username and password</legend>
-					<p id="' . self::$messageId . '">' . $message . '</p>
+					<p id="' . self::$messageId . '">' . $this->message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
 					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getRequestUserName() . '" />
@@ -147,6 +149,10 @@ class LoginView {
 		}
 	}
 	
+	/**
+	 * Set a value to the username field
+	 * @param $userName, String the username to be shown
+	 */
 	public function setRequestUserName($userName) {
 		$_POST[self::$name] = $userName;
 	}
@@ -158,8 +164,8 @@ class LoginView {
 	public function getRequestPassword() {
 		if(isset($_COOKIE[self::$cookiePassword])) {
 			return $_COOKIE[self::$cookiePassword];
-		} else if(isset($_POST[self::$password]) && $_POST[self::$password] != '') {
-			return $this->user->encryptPassword($_POST[self::$password]);
+		} else if(isset($_POST[self::$password])) {
+			return $_POST[self::$password];
 		} else {
 			return '';
 		}
@@ -188,14 +194,6 @@ class LoginView {
 	 public function getKeepLoggedIn() {
 	 	return isset($_POST[self::$keep]);
 	 }
-	
-	/**
-	 * Check if the user is logged in
-	 * @return true if the user is logged in, false otherwise
-	 */
-	public function isUserLoggedIn() {
-		return $this->user->getLoginStatus();
-	}
 	
 	/**
 	 * Check if the user is logged in this session and get the username

@@ -18,13 +18,21 @@ class User {
 	 * @param $password, String password
 	 */
 	public function login($userName, $password) {
+		$this->isLoggedIn = false; // reset the login status, in case the user is already marked as logged in
+		
 		$this->loginUserName = $userName;
 		$this->loginPassword = $password;
+		
+		if(trim($userName) == '') {
+			throw new \Exception('Username is missing');
+		} else if (trim($password) == '') {
+			throw new \Exception('Password is missing');
+		}
 		
 		if($this->userDAL->userNameExists($userName) && password_verify($this->userDAL->getPassword($userName), $password)) {
 			$this->isLoggedIn = true;
 		} else {
-			$this->isLoggedIn = false;
+			throw new \Exception('Wrong name or password');
 		}
 	}
 	
